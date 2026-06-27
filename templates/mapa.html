@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Mapa de Calidad del Aire{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script>
+
+<style>
+    #map { height: 500px; width: 80%; margin: 20px auto; }
+    .info { text-align: center; padding: 20px; }
+    #chartContainer {
+        width: 90%;
+        max-width: 800px;
+        margin: 30px auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="info">
+    <h1>Calidad del Aire en Tiempo Real</h1>
+    <p id="pm25_valor">PM2.5: {{ pm25 }} µg/m³</p>
+</div>
+
+<div id="map"></div>
+
+<div id="chartContainer">
+    <canvas id="pmChart"></canvas>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([{{ lat }}, {{ lon }}], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    L.circleMarker([{{ lat }}, {{ lon }}], {
+        radius: 10,
+        fillColor: "{{ color }}",
+        color: "#000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map).bindPopup(`PM2.5: {{ pm25 }} µg/m³`);
+</script>
+
+<script>
+    const ctx = document.getElementById('pmChart').getContext('2d');
+    const labels = {{ labels|tojson }};
+    const values = {{ valores_pm25|tojson }};
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'PM2.5 (µg/m³)',
+                data: values,
+                borderColor: 'blue',
+                backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                fill: false,
+                tension: 0.3,
+                pointRadius: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                annotation: {
+                    annotations: {
+                        zona1: {
+                            type: 'box',
+                            yMin: 0,
+                            yMax: 12,
+                            backgroundColor: 'rgba(0, 228, 0, 0.1)',
+                            borderWidth: 0
+                        },
+                        zona2: {
+                            type: 'box',
+                            yMin: 12,
+                            yMax: 35.4,
+                            backgroundColor: 'rgba(255, 255, 0, 0.1)',
+                            borderWidth: 0
+                        },
+                        zona3: {
+                            type: 'box',
+                            yMin: 35.4,
+                            yMax: 55.4,
+                            backgroundColor: 'rgba(255, 126, 0, 0.1)',
+                            borderWidth: 0
+                        },
+                        zona4: {
+                            type: 'box',
+                            yMin: 55.4,
+                            yMax: 150.4,
+                            backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                            borderWidth: 0
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    title: {
+                        display: true,
+                        text: 'PM2.5 (µg/m³)'
+                    },
+                    min: 0,
+                    max: 160
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tiempo'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                }
+            }
+        }
+    });
+
+    // 🔁 Auto-actualización del gráfico y texto
+    setInterval(() => {
+        fetch('/api/data')
+            .then(res => res.json())
+            .then(data => {
+                const pm25 = data.current.pm2_5;
+                const tiempo = data.current.timestamp;
+
+                // Agregar nuevo dato al gráfico
+                chart.data.labels.push(tiempo);
+                chart.data.datasets[0].data.push(pm25);
+
+                // Mantener solo los últimos 20
+                if (chart.data.labels.length > 20) {
+                    chart.data.labels.shift();
+                    chart.data.datasets[0].data.shift();
+                }
+
+                chart.update();
+
+                // Actualizar texto PM2.5
+                document.getElementById("pm25_valor").innerText = `PM2.5: ${pm25} µg/m³`;
+            });
+    }, 630000); // cada 15 segundos
+</script>
+{% endblock %}

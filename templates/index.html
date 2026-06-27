@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Monitor de Calidad del Aire{% endblock %}
+
+{% block content %}
+    <h1>Monitor de Calidad del Aire</h1>
+
+    {% if data.last_update %}
+    <div class="last-update">Última actualización: {{ data.last_update }}</div>
+
+    <div class="card">
+        <h2>Calidad del Aire</h2>
+        <div class="air-quality" style="background-color: {{ data.current.air_quality.color }};">
+            {{ data.current.air_quality.level }}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Partículas</h2>
+        <div>PM1.0: <span class="value">{{ data.current.pm1_0 }}</span> <span class="unit">µg/m³</span></div>
+        <div>PM2.5: <span class="value">{{ data.current.pm2_5 }}</span> <span class="unit">µg/m³</span></div>
+        <div>PM4.0: <span class="value">{{ data.current.pm4_0 }}</span> <span class="unit">µg/m³</span></div>
+        <div>PM10.0: <span class="value">{{ data.current.pm10_0 }}</span> <span class="unit">µg/m³</span></div>
+    </div>
+
+    <div class="card">
+        <h2>Ambiente</h2>
+        <div>Temperatura: <span class="value">{{ data.current.temperature }}</span> <span class="unit">°C</span></div>
+        <div>Humedad: <span class="value">{{ data.current.humidity }}</span> <span class="unit">%</span></div>
+    </div>
+
+    <div class="card">
+        <h2>Índices</h2>
+        <div>VOC: <span class="value">{{ data.current.voc_index }}</span></div>
+        <div>NOx: <span class="value">{{ data.current.nox_index }}</span></div>
+    </div>
+    {% else %}
+    <div>Esperando datos del sensor...</div>
+    {% endif %}
+
+    <script>
+    setInterval(() => {
+        fetch('/api/data')
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector(".last-update").innerText = "Última actualización: " + data.last_update;
+                document.querySelector(".air-quality").innerText = data.current.air_quality.level;
+                document.querySelector(".air-quality").style.backgroundColor = data.current.air_quality.color;
+
+                document.querySelectorAll(".card .value")[0].innerText = data.current.pm1_0;
+                document.querySelectorAll(".card .value")[1].innerText = data.current.pm2_5;
+                document.querySelectorAll(".card .value")[2].innerText = data.current.pm4_0;
+                document.querySelectorAll(".card .value")[3].innerText = data.current.pm10_0;
+
+                document.querySelectorAll(".card .value")[4].innerText = data.current.temperature;
+                document.querySelectorAll(".card .value")[5].innerText = data.current.humidity;
+
+                document.querySelectorAll(".card .value")[6].innerText = data.current.voc_index;
+                document.querySelectorAll(".card .value")[7].innerText = data.current.nox_index;
+            });
+    }, 630000);
+    </script>
+{% endblock %}
