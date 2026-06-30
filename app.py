@@ -5,7 +5,7 @@ from pymongo.server_api import ServerApi
 import os
 
 # ─── Conexión a MongoDB Atlas ───────────────────────────────────────────────
-MONGO_URI = "mongodb+srv://sensor:sensor123@datossensor.cjuli6y.mongodb.net/?appName=DatosSensor"
+MONGO_URI = os.environ.get("MONGO_URI")
 
 client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = client["calidad_aire"]
