@@ -13,12 +13,21 @@ collection = db["mediciones"]
 
 app = Flask(__name__)
 
+
 # ─── Caché en memoria (últimos 100 registros para el dashboard) ──────────────
 sensor_data = {
     'last_update': None,
     'current': {},
     'history': []
 }
+
+# ─── Cargar historial previo desde MongoDB al arrancar ─
+ultimos = list(collection.find({}, {'_id': 0}).sort('timestamp', -1).limit(100))
+sensor_data['history'] = list(reversed(ultimos))
+if sensor_data['history']:
+    sensor_data['current'] = sensor_data['history'][-1]
+    sensor_data['last_update'] = sensor_data['current'].get('timestamp')
+
 
 # ─── Rutas ───────────────────────────────────────────────────────────────────
 
