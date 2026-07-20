@@ -106,7 +106,10 @@ def mostrar_mapa():
 
 @app.route('/dashboard')
 def dashboard():
-    history = sensor_data['history'][-20:]
+    try:
+        history = list(collection.find({}, {'_id': 0}).sort('timestamp', 1).limit(100))
+    except:
+        history = sensor_data['history'][-20:]
     return render_template('dashboard.html', history=history)
 
 
