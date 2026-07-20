@@ -107,11 +107,22 @@ def mostrar_mapa():
 @app.route('/dashboard')
 def dashboard():
     try:
-        history = list(collection.find({}, {'_id': 0}).sort('timestamp', 1).limit(100))
-    except:
-        history = sensor_data['history'][-20:]
+        raw = list(collection.find({}, {'_id': 0}).sort('timestamp', 1).limit(100))
+        history = []
+        for d in raw:
+            history.append({
+                'timestamp': d.get('timestamp', ''),
+                'pm1_0':     d.get('pm1_0', 0) or 0,
+                'pm2_5':     d.get('pm2_5', 0) or 0,
+                'pm4_0':     d.get('pm4_0', 0) or 0,
+                'pm10_0':    d.get('pm10_0', 0) or 0,
+                'temperature': d.get('temperature', 0) or 0,
+                'humidity':  d.get('humidity', 0) or 0,
+            })
+    except Exception as e:
+        print("Error cargando dashboard:", e)
+        history = []
     return render_template('dashboard.html', history=history)
-
 
 @app.route('/api/data')
 def get_data():
