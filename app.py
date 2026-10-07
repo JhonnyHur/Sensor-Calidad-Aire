@@ -124,18 +124,17 @@ def debug_dashboard():
 @app.route('/dashboard')
 def dashboard():
     try:
-        raw = list(collection.find({}, {'_id': 0}).sort('timestamp', 1).limit(100))
-        history = []
-        for d in raw:
-            history.append({
-                'timestamp': d.get('timestamp', ''),
-                'pm1_0':     d.get('pm1_0', 0) or 0,
-                'pm2_5':     d.get('pm2_5', 0) or 0,
-                'pm4_0':     d.get('pm4_0', 0) or 0,
-                'pm10_0':    d.get('pm10_0', 0) or 0,
-                'temperature': d.get('temperature', 0) or 0,
-                'humidity':  d.get('humidity', 0) or 0,
-            })
+        raw = list(collection.find({}, {'_id': 0}).sort('timestamp', -1).limit(100))
+        raw.reverse()  # de vuelta a orden cronológico para las gráficas
+        history = [{
+            'timestamp':   d.get('timestamp', ''),
+            'pm1_0':       d.get('pm1_0', 0) or 0,
+            'pm2_5':       d.get('pm2_5', 0) or 0,
+            'pm4_0':       d.get('pm4_0', 0) or 0,
+            'pm10_0':      d.get('pm10_0', 0) or 0,
+            'temperature': d.get('temperature', 0) or 0,
+            'humidity':    d.get('humidity', 0) or 0,
+        } for d in raw]
     except Exception as e:
         print("Error cargando dashboard:", e)
         history = []
